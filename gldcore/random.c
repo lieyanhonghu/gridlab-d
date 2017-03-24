@@ -22,7 +22,7 @@
 #include <float.h>
 #include <ctype.h>
 
-#include "random.h"
+#include "gldrandom.h"
 #include "find.h"
 #include "output.h"
 #include "exception.h"

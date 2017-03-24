@@ -116,7 +116,7 @@
 #include "threadpool.h"
 #include "debug.h"
 #include "exception.h"
-#include "random.h"	
+#include "gldrandom.h"
 #include "local.h"
 #include "schedule.h"
 #include "transform.h"

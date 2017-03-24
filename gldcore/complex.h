@@ -30,6 +30,7 @@ typedef enum {I='i',J='j',A='d', R='r'} CNOTATION; /**< complex number notation 
 #ifndef __cplusplus
 typedef struct s_complex {
 #else
+namespace gld {
 class complex { 
 private:
 #endif
@@ -328,6 +329,7 @@ public:
 	inline bool operator >= (complex y)	{ return fmod(y.Arg()-Arg(),2*PI)>=PI;};
 	inline bool IsFinite(void) { return isfinite(r) && isfinite(i); };
 };
+}
 #endif
 
 #endif
