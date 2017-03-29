@@ -63,11 +63,11 @@ typedef struct _helicslist {
 	struct _helicslist *next;
 } HELICSLIST;
 class helics_publication {
+public:
 	helics_publication(){
 		pObjectProperty = NULL;
 		pHelicsPublicationId = NULL;
 	}
-public:
 	string objectName;
 	string propertyName;
 	gld_property *pObjectProperty;
@@ -75,11 +75,11 @@ public:
 };
 
 class helics_subscription {
+public:
 	helics_subscription(){
 		pObjectProperty = NULL;
 		pHelicsSubscriptionId = NULL;
 	}
-public:
 	string objectName;
 	string propertyName;
 	string subscription_topic;
