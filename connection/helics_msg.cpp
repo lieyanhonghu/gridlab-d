@@ -399,9 +399,6 @@ int helics_msg::init(OBJECT *parent){
 		}
 	}
 	//register with helics
-	//printf("%s",zplfile.str().c_str());
-	//helics::initialize(zplfile.str());
-	//TODO call appropriate helics registration
 	helics_federate = new helics::ValueFederate(helics_config);
 	//register helics publications
 	string pub_sub_name = ""
@@ -411,6 +408,12 @@ int helics_msg::init(OBJECT *parent){
 		pub_sub_name.append("/");
 		pub_sub_name.append(pub->propertyName);
 		pub->pHelicsPublicationId = helics_federate->registerPublication(pub_sub_name, "string", "");
+	}
+	//register helics subscriptions
+	for(vector<helics_subscription>::iterator sub = helics_subscriptions.begin(); sub != helics_subscriptions.end(); sub++) {
+		pub_sub_name.clear();
+		pub_sub_name.append(sub->subscription_topic);
+		sub->pHelicsSubscriptionId = helics_federate->registerRequiredSubscription(pub_sub_name, "string", "");
 	}
 	atexit(send_die);
 	last_approved_helics_time = gl_globalclock;
