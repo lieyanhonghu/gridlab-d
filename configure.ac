@@ -493,16 +493,11 @@ AS_CASE([$with_helics],
 gld_save_LIBS="$LIBS"; LIBS="$LIBS $HELICS_LIBS"
 gld_save_LDFLAGS="$LDFLAGS"; LDFLAGS="$LDFLAGS $HELICS_LDFLAGS"
 gld_save_CPPFLAGS="$CPPFLAGS"; CPPFLAGS="$CPPFLAGS $HELICS_CPPFLAGS"
-# add libapplication_api to HELICS_LIBS if missing
+# add libhelics to HELICS_LIBS if missing
 AS_CASE([$HELICS_LIBS],
-        [*lapplication_api*], [], [HELICS_LIBS="$HELICS_LIBS -lapplication_api"])
+        [*lhelics*], [], [HELICS_LIBS="$HELICS_LIBS -lhelics"])
 AS_CASE([$LIBS],
-        [*lapplication_api*], [], [LIBS="$LIBS -lapplication_api"])
-# add libhelics_core to HELICS_LIBS if missing
-AS_CASE([$HELICS_LIBS],
-        [*lhelics_core*], [], [HELICS_LIBS="$HELICS_LIBS -lhelics_core"])
-AS_CASE([$LIBS],
-        [*lhelics_core*], [], [LIBS="$LIBS -lhelics_core"])
+        [*lhelics*], [], [LIBS="$LIBS -lhelics"])
 # add libzmq to HELICS_LIBS if missing
 #AS_CASE([$HELICS_LIBS],
 #        [*lzmq*], [], [HELICS_LIBS="$HELICS_LIBS -lzmq"])
@@ -512,10 +507,10 @@ have_helics=yes
 AC_MSG_CHECKING([for HELICS])
 AC_LINK_IFELSE(
     [AC_LANG_PROGRAM([[
-#include<helics/application_api/application_api.h>
+#include<helics/application_api/identifierTypes.hpp>
 ]],
 [[
-Time t;
+helics::publication_id_t *t;
 ]])],
     [have_helics=yes; have_helics_int=1],
     [have_helics=no; have_helics_int=0])
