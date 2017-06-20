@@ -100,7 +100,7 @@ int helics_msg::configure(char *value)
 			string json_config_string;
 			Json::Reader json_reader;
 			while (ifile >> json_config_line) { //Place the entire contents of the file into a stringstream
-				json_config_stream << json_config_line << "\n";
+				json_config_stream << json_config_line;
 			}
 			json_config_string = json_config_stream.str();
 			gl_verbose("helics_msg::configure(): json string read from configure file: %s .\n", json_config_string.c_str()); //renke debug
@@ -161,7 +161,7 @@ void send_die(void)
 	if(exitCode.get_int16() != 0){
 		//TODO find equivalent helics die message
 #if HAVE_HELICS
-		printf("helics_msg: Calling error\n");
+		gl_verbose("helics_msg: Calling error");
 		pHelicsFederate->error((int)(exitCode.get_int16()));
 #endif
 	} /*else {
@@ -279,11 +279,11 @@ int helics_msg::init(OBJECT *parent){
 	helics_config.name = string(obj->name);
 	helics_config.uninterruptible = false;
 	helics_config.timeDelta = 1.0;//1 second
-	helics_config.lookAhead = 1.0;
-	helics_config.impactWindow = 1.0;
+	//helics_config.lookAhead = 1.0;
+	//:helics_config.impactWindow = 1.0;
 	helics_config.coreType = "zmq";
 	helics_config.coreInitString = number_of_cores;
-	printf("helics_msg: Calling ValueFederate Constructor\n");
+	gl_verbose("helics_msg: Calling ValueFederate Constructor");
 	helics_federate = new helics::ValueFederate(helics_config);
 	pHelicsFederate = helics_federate;
 	//register helics publications
@@ -305,7 +305,7 @@ int helics_msg::init(OBJECT *parent){
 		}
 #endif
 #if 1
-		printf("helics_msg: Calling registerPublication\n");
+		gl_verbose("helics_msg: Calling registerPublication");
 		(*pub)->pHelicsPublicationId = helics_federate->registerPublication((*pub)->topicName, "string", "");
 #endif
 	}
@@ -337,15 +337,15 @@ int helics_msg::init(OBJECT *parent){
 		}
 #endif
 #if 1
-		printf("helics_msg: Calling registerOptionalSubscription\n");
+		gl_verbose("helics_msg: Calling registerOptionalSubscription");
 		(*sub)->pHelicsSubscriptionId = helics_federate->registerRequiredSubscription(pub_sub_name, "string", "");
-		helics_federate->setDefaultValue<string>((*sub)->pHelicsSubscriptionId, "");
+        	// helics_federate->setDefaultValue<string>((*sub)->pHelicsSubscriptionId, "");
 #endif
 	}
 	//TODO Call finished initializing
-	printf("helics_msg: Calling enterInitializationState\n");
+	gl_verbose("helics_msg: Calling enterInitializationState");
 	helics_federate->enterInitializationState();
-	printf("helics_msg: Calling enterExecutionState\n");
+	gl_verbose("helics_msg: Calling enterExecutionState");
 	helics_federate->enterExecutionState();
 #endif
 	atexit(send_die);
@@ -528,7 +528,7 @@ TIMESTAMP helics_msg::clk_update(TIMESTAMP t1)
 	if(exitDeltamode == true){
 #if HAVE_HELICS
 		//TODO update time delta in helics
-		printf("helics_msg: Calling setTimeDelta\n");
+		gl_verbose("helics_msg: Calling setTimeDelta");
 		helics_federate->setTimeDelta(1.0);
 #endif
 		exitDeltamode = false;
@@ -537,7 +537,7 @@ TIMESTAMP helics_msg::clk_update(TIMESTAMP t1)
 	if(t1 > last_approved_helics_time){
 		if(gl_globalclock == gl_globalstoptime){
 #if HAVE_HELICS
-			printf("helics_msg: Calling finalize\n");
+			gl_verbose("helics_msg: Calling finalize");
 			pHelicsFederate->finalize();
 #endif
 			return t1;
@@ -548,11 +548,10 @@ TIMESTAMP helics_msg::clk_update(TIMESTAMP t1)
 		helics::Time t((double)((t1 - initial_sim_time)));
 //		helics_time = ((TIMESTAMP)helics::time_request(t))/1000000000 + initial_sim_time;
 		//TODO call appropriate helics time update function
-		printf("helics_msg: Calling requestime  t=%f\n", (double)t);
+		gl_verbose("helics_msg: Calling requestime");
 		helics::Time rt;
 		rt = helics_federate->requestTime(t);
 		helics_time = (TIMESTAMP)rt + initial_sim_time;
-		printf("helics_msg: requestTime =%f\n", (double)rt);
 #endif
 		if(helics_time <= gl_globalclock){
 			gl_error("helics_msg::clock_update: Cannot return the current time or less than the current time.");
@@ -763,8 +762,16 @@ int helics_msg::publishVariables(){
 		}
 #if 1
 	#if HAVE_HELICS
-		printf("helics_msg: Calling publish\n");
+        try {
+		gl_verbose("calling helics publish");
 		helics_federate->publish((*pub)->pHelicsPublicationId, &buffer[0], buffer_size);
+        // } catch (std::exception e) { // copy-initialization from the std::exception base
+        //     std::cout << e.what(); // information from length_error is lost
+        // }
+        } catch (const std::exception& e) { // reference to the base of a polymorphic object
+		gl_error("calling HELICS Value Federate resulted in an unknown error.");
+             std::cout << e.what() << std::endl; // information from length_error printed
+        }
 	#endif
 #endif
 		memset(&buffer[0], '\0', 1024);
@@ -814,7 +821,7 @@ int helics_msg::subscribeVariables(){
 		}
 #endif
 #if 1
-		printf("helics_msg: Calling getValue\n");
+		gl_verbose("helics_msg: Calling getValue");
 		helics_federate->getValue((*sub)->pHelicsSubscriptionId, value_buffer);
 		if(!value_buffer.empty()){
 			strncpy(valueBuf, value_buffer.c_str(), 1023);
