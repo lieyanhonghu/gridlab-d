@@ -421,7 +421,8 @@ int tmy2_reader::read_data(double *dnr, double *dhr, double *ghr, double *tdb, d
 		tmp_dhr = atoi(t_dhr);
 		tmp_tot_sky_cov = atoi(t_tkc);
 		tmp_opq_sky_cov = atoi(t_osc);
-		tmp_tdb = (int)(atof(t_tdb)*10); //Since for TMY3, measurement is 1/10. So we are multiplying this by 10 to avoid code changes later on. tmp_tdb is now scaled same as TMY2 value
+		//tmp_tdb = (int)(atof(t_tdb)*10); //Since for TMY3, measurement is 1/10. So we are multiplying this by 10 to avoid code changes later on. tmp_tdb is now scaled same as TMY2 value
+		tmp_tdb = atoi(t_tdb);		
 		tmp_rh = atoi(t_rh);
 		tmp_press = atoi(t_press);
 		tmp_wd = atoi(t_wd);
