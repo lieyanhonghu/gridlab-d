@@ -426,8 +426,8 @@ int tmy2_reader::read_data(double *dnr, double *dhr, double *ghr, double *tdb, d
 		tmp_rh = atoi(t_rh);
 		tmp_press = atoi(t_press);
 		tmp_wd = atoi(t_wd);
-		tmp_ws = (int)(atof(t_ws)*10);
-		tmp_precip = (int)(atof(t_precip)*10);//converting from centimeters to millimeters
+		tmp_ws = (int)(roundf(atof(t_ws)*10));
+		tmp_precip = (int)(roundf(atof(t_precip)*10));//converting from centimeters to millimeters
 		tmp_sf = atoi(t_sf);		
 		rct = rct+1;
 		tmp_sf = 0; //tmy3 doesnt have this field (snow depth). so set to 0
