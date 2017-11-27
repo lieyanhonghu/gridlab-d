@@ -507,7 +507,7 @@ have_helics=yes
 AC_MSG_CHECKING([for HELICS])
 AC_LINK_IFELSE(
     [AC_LANG_PROGRAM([[
-#include<helics/application_api/identifierTypes.hpp>
+#include<helics/application_api/helicsTypes.hpp>
 ]],
 [[
 helics::publication_id_t *t;

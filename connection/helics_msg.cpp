@@ -28,17 +28,17 @@ EXPORT TIMESTAMP clocks_update(void *ptr, TIMESTAMP t1)
 	return my->clk_update(t1);
 }
 
-/*EXPORT SIMULATIONMODE dInterupdate(void *ptr, unsigned int dIntervalCounter, TIMESTAMP t0, unsigned int64 dt)
+EXPORT SIMULATIONMODE dInterupdate(void *ptr, unsigned int dIntervalCounter, TIMESTAMP t0, unsigned int64 dt)
 {
 	helics_msg *my = (helics_msg *)ptr;
 	return my->deltaInterUpdate(dIntervalCounter, t0, dt);
-}*/
+}
 
-/*EXPORT SIMULATIONMODE dClockupdate(void *ptr, double t1, unsigned long timestep, SIMULATIONMODE sysmode)
+EXPORT SIMULATIONMODE dClockupdate(void *ptr, double t1, unsigned long timestep, SIMULATIONMODE sysmode)
 {
 	helics_msg *my = (helics_msg *)ptr;
 	return my->deltaClockUpdate(t1, timestep, sysmode);
-}*/
+}
 
 //static FUNCTIONSRELAY *first_helicsfunction = NULL;
 
@@ -281,7 +281,7 @@ int helics_msg::init(OBJECT *parent){
 	helics_config.timeDelta = 1.0;//1 second
 	//helics_config.lookAhead = 1.0;
 	//:helics_config.impactWindow = 1.0;
-	helics_config.coreType = "zmq";
+	helics_config.coreType = helics::core_type::ZMQ;
 	helics_config.coreInitString = number_of_cores;
 	gl_verbose("helics_msg: Calling ValueFederate Constructor");
 	helics_federate = new helics::ValueFederate(helics_config);
@@ -392,7 +392,7 @@ TIMESTAMP helics_msg::commit(TIMESTAMP t0, TIMESTAMP t1){
 	return TS_NEVER;
 }
 
-/*SIMULATIONMODE helics_msg::deltaInterUpdate(unsigned int delta_iteration_counter, TIMESTAMP t0, unsigned int64 dt)
+SIMULATIONMODE helics_msg::deltaInterUpdate(unsigned int delta_iteration_counter, TIMESTAMP t0, unsigned int64 dt)
 {
 	int result = 0;
 	gld_global dclock("deltaclock");
@@ -402,27 +402,8 @@ TIMESTAMP helics_msg::commit(TIMESTAMP t0, TIMESTAMP t1){
 	}
 	if(dclock.get_int64() > 0){
 		if(delta_iteration_counter == 0){
-			//publish commit variables
-			result = publishVariables(vmap[8]);
-			if(result == 0){
-				return SM_ERROR;
-			}
-			//read commit variables from cache
-			result = subscribeVariables(vmap[8]);
-			if(result == 0){
-				return SM_ERROR;
-			}
-
-			//process external function calls
-			incoming_helics_function();
-
-			//publish precommit variables
-			result = publishVariables(vmap[4]);
-			if(result == 0){
-				return SM_ERROR;
-			}
-			//read precommit variables from cache
-			result = subscribeVariables(vmap[4]);
+			//precommit: read variables from cache
+			result = subscribeVariables();
 			if(result == 0){
 				return SM_ERROR;
 			}
@@ -431,67 +412,32 @@ TIMESTAMP helics_msg::commit(TIMESTAMP t0, TIMESTAMP t1){
 
 		if(delta_iteration_counter == 1)
 		{
-			//publish presync variables
-			result = publishVariables(vmap[5]);
-			if(result == 0){
-				return SM_ERROR;
-			}
-			//read presync variables from cache
-			result = subscribeVariables(vmap[5]);
-			if(result == 0){
-				return SM_ERROR;
-			}
 			return SM_DELTA_ITER;
 		}
 
 		if(delta_iteration_counter == 2)
 		{
-			//publish plc variables
-			result = publishVariables(vmap[12]);
-			if(result == 0){
-				return SM_ERROR;
-			}
-			//read plc variables from cache
-			result = subscribeVariables(vmap[12]);
-			if(result == 0){
-				return SM_ERROR;
-			}
 			return SM_DELTA_ITER;
 		}
 
 		if(delta_iteration_counter == 3)
 		{
-			//publish sync variables
-			result = publishVariables(vmap[6]);
-			if(result == 0){
-				return SM_ERROR;
-			}
-			//read sync variables from cache
-			result = subscribeVariables(vmap[6]);
-			if(result == 0){
-				return SM_ERROR;
-			}
 			return SM_DELTA_ITER;
 		}
 
 		if(delta_iteration_counter == 4)
-			{
-			//publish postsync variables
-			result = publishVariables(vmap[7]);
-			if(result == 0){
-				return SM_ERROR;
-			}
-			//read postsync variables from cache
-			result = subscribeVariables(vmap[7]);
+		{
+			//post_sync: publish variables
+			result = publishVariables();
 			if(result == 0){
 				return SM_ERROR;
 			}
 		}
 	}
 	return SM_EVENT;
-}*/
+}
 
-/*SIMULATIONMODE helics_msg::deltaClockUpdate(double t1, unsigned long timestep, SIMULATIONMODE sysmode)
+SIMULATIONMODE helics_msg::deltaClockUpdate(double t1, unsigned long timestep, SIMULATIONMODE sysmode)
 {
 #if HAVE_HELICS
 	if (t1 > last_delta_helics_time){
@@ -500,12 +446,11 @@ TIMESTAMP helics_msg::commit(TIMESTAMP t0, TIMESTAMP t1){
 //		helics::time t = 0;
 		helics::Time t = 0;
 		double dt = 0;
-		dt = (t1 - (double)initial_sim_time) * 1000000000.0;
+		dt = (t1 - (double)initial_sim_time);
 //		t = (helics::time)((dt + ((double)(timestep) / 2.0)) - fmod((dt + ((double)(timestep) / 2.0)), (double)timestep));
-		t = (helics::Time)((dt + ((double)(timestep) / 2.0)) - fmod((dt + ((double)(timestep) / 2.0)), (double)timestep));
-//		helics::update_time_delta((helics::time)timestep);
-		//TODO find a capability to update the smallest time delta in helics
-//		helics_time = helics::time_request(t);
+		t = (helics::Time)(dt);
+		helics_federate->setTimeDelta((helics::Time)(((double)timestep)/DT_SECOND));
+		helics_time = helics_federate->requestTime(t);
 		//TODO call helics time update function
 		if(sysmode == SM_EVENT)
 			exitDeltamode = true;
@@ -513,13 +458,18 @@ TIMESTAMP helics_msg::commit(TIMESTAMP t0, TIMESTAMP t1){
 			gl_error("helics_msg::deltaClockUpdate: Cannot return anything other than the time GridLAB-D requested in deltamode.");
 			return SM_ERROR;
 		} else {
-			last_delta_helics_time = (double)(helics_time)/1000000000.0 + (double)(initial_sim_time);
-			t1 = (TIMESTAMP)helics_time;
+			last_delta_helics_time = (double)(helics_time) + (double)(initial_sim_time);
 		}
 	}
 #endif
-	return SM_DELTA; // We should've only gotten here by being in SM_DELTA to begin with.
-}*/
+	if(sysmode == SM_DELTA) {
+		return SM_DELTA;
+	} else if (sysmode == SM_EVENT) {
+		return SM_EVENT;
+	} else {
+		return SM_ERROR;
+	}
+}
 
 TIMESTAMP helics_msg::clk_update(TIMESTAMP t1)
 {

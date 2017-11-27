@@ -107,8 +107,8 @@ public:
 	char simulationName[1024];
 	void term(TIMESTAMP t1);
 	TIMESTAMP clk_update(TIMESTAMP t1);
-//	SIMULATIONMODE deltaInterUpdate(unsigned int delta_iteration_counter, TIMESTAMP t0, unsigned int64 dt);
-//	SIMULATIONMODE deltaClockUpdate(double t1, unsigned long timestep, SIMULATIONMODE sysmode);
+	SIMULATIONMODE deltaInterUpdate(unsigned int delta_iteration_counter, TIMESTAMP t0, unsigned int64 dt);
+	SIMULATIONMODE deltaClockUpdate(double t1, unsigned long timestep, SIMULATIONMODE sysmode);
 	// TODO add other event handlers here
 public:
 	// special variables for GridLAB-D classes
