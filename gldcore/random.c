@@ -545,7 +545,7 @@ double random_gamma(unsigned int *state, /**< the rng state */
 	else if (na<1) /* a is small */
 	{
 		double p, q, x, u, v;
-		p = E/(alpha+E);
+		p = GLD_E/(alpha+GLD_E);
 		do {
 			u = randunit(state);
 			v = randunit_pos(state);
