@@ -164,10 +164,10 @@ void send_die(void)
 		gl_verbose("helics_msg: Calling error");
 		pHelicsFederate->error((int)(exitCode.get_int16()));
 #endif
-	} /*else {
+	}/* else {
 		//TODO find equivalent helics clean exit message
 #if HAVE_HELICS
-		printf("helics_msg: Calling finalize\n");
+		gl_verbose("helics_msg: Calling finalize\n");
 		pHelicsFederate->finalize();
 #endif
 	}*/
@@ -485,6 +485,11 @@ TIMESTAMP helics_msg::clk_update(TIMESTAMP t1)
 		return t1;
 	}
 	if(t1 > last_approved_helics_time){
+		int result = 0;
+		result = publishVariables();
+		if(result == 0){
+			return TS_INVALID;
+		}
 		if(gl_globalclock == gl_globalstoptime){
 #if HAVE_HELICS
 			gl_verbose("helics_msg: Calling finalize");
