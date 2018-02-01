@@ -15,7 +15,7 @@
 #ifdef min
 #undef min
 #endif
-#include <helics/application_api/application_api.h>
+#include <helics/application_api/ValueFederate.hpp>
 #endif
 #include<sstream>
 #include<vector>
