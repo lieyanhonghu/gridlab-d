@@ -495,9 +495,9 @@ gld_save_LDFLAGS="$LDFLAGS"; LDFLAGS="$LDFLAGS $HELICS_LDFLAGS"
 gld_save_CPPFLAGS="$CPPFLAGS"; CPPFLAGS="$CPPFLAGS $HELICS_CPPFLAGS"
 # add libhelics to HELICS_LIBS if missing
 AS_CASE([$HELICS_LIBS],
-        [*lhelics*], [], [HELICS_LIBS="$HELICS_LIBS -lhelics_apps-staticd"])
+        [*lhelics*], [], [HELICS_LIBS="$HELICS_LIBS -lhelics-staticd"])
 AS_CASE([$LIBS],
-        [*lhelics*], [], [LIBS="$LIBS -lhelics_apps-staticd"])
+        [*lhelics*], [], [LIBS="$LIBS -lhelics-staticd"])
 # add libzmq to HELICS_LIBS if missing
 #AS_CASE([$HELICS_LIBS],
 #        [*lzmq*], [], [HELICS_LIBS="$HELICS_LIBS -lzmq"])
