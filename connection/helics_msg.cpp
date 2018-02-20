@@ -718,13 +718,15 @@ int helics_msg::publishVariables(){
 #if 1
 	#if HAVE_HELICS
         try {
-		gl_verbose("calling helics publish");
-		helics_federate->publish((*pub)->pHelicsPublicationId, &buffer[0], buffer_size);
+			if(helics_federate->getCurrentState() == helics::ValueFederate::op_states::execution){
+				gl_verbose("calling helics publish");
+				helics_federate->publish((*pub)->pHelicsPublicationId, &buffer[0], buffer_size);
+			}
         // } catch (std::exception e) { // copy-initialization from the std::exception base
         //     std::cout << e.what(); // information from length_error is lost
         // }
         } catch (const std::exception& e) { // reference to the base of a polymorphic object
-		gl_error("calling HELICS Value Federate resulted in an unknown error.");
+        	gl_error("calling HELICS Value Federate resulted in an unknown error.");
              std::cout << e.what() << std::endl; // information from length_error printed
         }
 	#endif
