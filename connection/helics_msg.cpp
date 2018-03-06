@@ -21,7 +21,7 @@ EXPORT_PRECOMMIT(helics_msg);
 EXPORT_SYNC(helics_msg);
 EXPORT_COMMIT(helics_msg);
 EXPORT_LOADMETHOD(helics_msg,configure);
-static helics::ValueFederate *pHelicsFederate;
+static helics::CombinationFederate *pHelicsFederate;
 EXPORT TIMESTAMP clocks_update(void *ptr, TIMESTAMP t1)
 {
 	helics_msg*my = (helics_msg*)ptr;
@@ -83,8 +83,10 @@ int helics_msg::configure(char *value)
 		ifstream ifile;
 		string confLine;
 		string value = "";
-		helics_publication *pub = NULL;
-		helics_subscription *sub = NULL;
+		helics_value_publication *pub = NULL;
+		helics_value_subscription *sub = NULL;
+		helics_endpoint_publication *ep_pub = NULL;
+		helics_endpoint_subscription *ep_sub = NULL;
 		string object_name_temp = "";
 		string property_name_temp = "";
 		Json::ValueIterator it;
@@ -105,40 +107,57 @@ int helics_msg::configure(char *value)
 			json_config_string = json_config_stream.str();
 			gl_verbose("helics_msg::configure(): json string read from configure file: %s .\n", json_config_string.c_str()); //renke debug
 			json_reader.parse(json_config_string, publish_json_config);
-			if(!publish_json_config.isMember("publications")) {
-				gl_error("helics_msg::configure(): failed to find publications key in configuration file %s\n", (char *)configFile);
-				return 0;
-			}
-			for(it = publish_json_config["publications"].begin(); it != publish_json_config["publications"].end(); ++it) {
-				object_name_temp = it.name();
-				for(Json::ValueIterator it1 = publish_json_config["publications"][it.name()].begin(); it1 != publish_json_config["publications"][it.name()].end(); ++it1) {
-					pub = new helics_publication();
-					pub->objectName = object_name_temp;
-					pub->propertyName = it1.name();
-					pub->topicName = publish_json_config["publications"][it.name()][it1.name()].asString();
-					helics_publications.push_back(pub);
+			if(publish_json_config.isMember("publications")) {
+				for(it = publish_json_config["publications"].begin(); it != publish_json_config["publications"].end(); ++it) {
+					object_name_temp = it.name();
+					for(Json::ValueIterator it1 = publish_json_config["publications"][it.name()].begin(); it1 != publish_json_config["publications"][it.name()].end(); ++it1) {
+						pub = new helics_value_publication();
+						pub->objectName = object_name_temp;
+						pub->propertyName = it1.name();
+						pub->topicName = publish_json_config["publications"][it.name()][it1.name()].asString();
+						helics_value_publications.push_back(pub);
+					}
 				}
 			}
-			if(!publish_json_config.isMember("subscriptions")) {
-				gl_error("helics_msg::configure(): failed to find subscriptions key in configuration file %s\n", (char *)configFile);
-				return 0;
-			}
-			for(it = publish_json_config["subscriptions"].begin(); it != publish_json_config["subscriptions"].end(); ++it) {
-				object_name_temp = it.name();
+			if(publish_json_config.isMember("subscriptions")) {
+				for(it = publish_json_config["subscriptions"].begin(); it != publish_json_config["subscriptions"].end(); ++it) {
+					object_name_temp = it.name();
 
-				for(Json::ValueIterator it1 = publish_json_config["subscriptions"][it.name()].begin(); it1 != publish_json_config["subscriptions"][it.name()].end(); ++it1) {
-					sub = new helics_subscription();
-					sub->objectName = object_name_temp;
-					sub->propertyName = it1.name();
-					sub->subscription_topic = publish_json_config["subscriptions"][it.name()][it1.name()].asString();
-					helics_subscriptions.push_back(sub);
+					for(Json::ValueIterator it1 = publish_json_config["subscriptions"][it.name()].begin(); it1 != publish_json_config["subscriptions"][it.name()].end(); ++it1) {
+						sub = new helics_value_subscription();
+						sub->objectName = object_name_temp;
+						sub->propertyName = it1.name();
+						sub->subscription_topic = publish_json_config["subscriptions"][it.name()][it1.name()].asString();
+						helics_value_subscriptions.push_back(sub);
+					}
 				}
 			}
-			if(!publish_json_config.isMember("number_of_cores")) {
-				gl_error("helics_msg::configure(): failed to find number_of_cores key in configuration file %s\n", (char *)configFile);
-				return 0;
+			if(publish_json_config.isMember("endpoint_publications")) {
+				for(it = publish_json_config["endpoint_publications"].begin(); it != publish_json_config["endpoint_publications"].end(); ++it) {
+					object_name_temp = it.name();
+					for(Json::ValueIterator it1 = publish_json_config["endpoint_publications"][it.name()].begin(); it1 != publish_json_config["endpoint_publications"][it.name()].end(); ++it1) {
+						ep_pub = new helics_endpoint_publication();
+						ep_pub->objectName = object_name_temp;
+						ep_pub->propertyName = it1.name();
+						ep_pub->topicName = ep_pub->objectName + "/" + ep_pub->propertyName;
+						ep_pub->destination = publish_json_config["endpoint_publications"][it.name()][it1.name()].asString();
+						helics_endpoint_publications.push_back(ep_pub);
+					}
+				}
 			}
-			number_of_cores = publish_json_config["number_of_cores"].asString();
+			if(publish_json_config.isMember("endpoint_subscriptions")) {
+				for(it = publish_json_config["endpoint_subscriptions"].begin(); it != publish_json_config["endpoint_subscriptions"].end(); ++it) {
+					object_name_temp = it.name();
+
+					for(Json::ValueIterator it1 = publish_json_config["endpoint_subscriptions"][it.name()].begin(); it1 != publish_json_config["endpoint_subscriptions"][it.name()].end(); ++it1) {
+						ep_sub = new helics_value_subscription();
+						ep_sub->objectName = object_name_temp;
+						ep_sub->propertyName = it1.name();
+						ep_sub->subscription_topic = publish_json_config["endpoint_subscriptions"][it.name()][it1.name()].asString();
+						helics_endpoint_subscriptions.push_back(ep_sub);
+					}
+				}
+			}
 			if (rv == 0) {
 				return 0;
 			}
@@ -198,7 +217,7 @@ int helics_msg::init(OBJECT *parent){
 	char defaultBuf[1024] = "";
 	string type;
 	string gld_prop_string = "";
-	for(vector<helics_publication*>::iterator pub = helics_publications.begin(); pub != helics_publications.end(); pub++) {
+	for(vector<helics_value_publication*>::iterator pub = helics_value_publications.begin(); pub != helics_value_publications.end(); pub++) {
 		if((*pub)->pObjectProperty == NULL) {
 			const char *pObjName = (*pub)->objectName.c_str();
 			const char *pPropName = (*pub)->propertyName.c_str();
@@ -217,7 +236,7 @@ int helics_msg::init(OBJECT *parent){
 	if(rv == 0) {
 		return rv;
 	}
-	for(vector<helics_subscription*>::iterator sub = helics_subscriptions.begin(); sub != helics_subscriptions.end(); sub++) {
+	for(vector<helics_value_subscription*>::iterator sub = helics_value_subscriptions.begin(); sub != helics_value_subscriptions.end(); sub++) {
 		if((*sub)->pObjectProperty == NULL) {
 			const char *pObjName = (*sub)->objectName.c_str();
 			const char *pPropName = (*sub)->propertyName.c_str();
@@ -236,13 +255,63 @@ int helics_msg::init(OBJECT *parent){
 	if(rv == 0) {
 		return rv;
 	}
-	for(vector<helics_publication*>::iterator pub = helics_publications.begin(); pub != helics_publications.end(); pub++) {
+	for(vector<helics_endpoint_publication*>::iterator pub = helics_endpoint_publications.begin(); pub != helics_endpoint_publications.end(); pub++) {
+		if((*pub)->pObjectProperty == NULL) {
+			const char *pObjName = (*pub)->objectName.c_str();
+			const char *pPropName = (*pub)->propertyName.c_str();
+			char *pObjBuf = new char[strlen(pObjName)+1];
+			char *pPropBuf = new char[strlen(pPropName)+1];
+			strcpy(pObjBuf, pObjName);
+			strcpy(pPropBuf, pPropName);
+			(*pub)->pObjectProperty = new gld_property(pObjBuf, pPropBuf);
+			if(!(*pub)->pObjectProperty->is_valid()) {
+				rv = 0;
+				gl_error("helics_msg::init(): There is not object %s with property %s",(char *)(*pub)->objectName.c_str(), (char *)(*pub)->propertyName.c_str());
+				break;
+			}
+		}
+	}
+	if(rv == 0) {
+		return rv;
+	}
+	for(vector<helics_endpoint_subscription*>::iterator sub = helics_endpoint_subscriptions.begin(); sub != helics_endpoint_subscriptions.end(); sub++) {
+		if((*sub)->pObjectProperty == NULL) {
+			const char *pObjName = (*sub)->objectName.c_str();
+			const char *pPropName = (*sub)->propertyName.c_str();
+			char *pObjBuf = new char[strlen(pObjName)+1];
+			char *pPropBuf = new char[strlen(pPropName)+1];
+			strcpy(pObjBuf, pObjName);
+			strcpy(pPropBuf, pPropName);
+			(*sub)->pObjectProperty = new gld_property(pObjBuf, pPropBuf);
+			if(!(*sub)->pObjectProperty->is_valid()) {
+				rv = 0;
+				gl_error("helics_msg::init(): There is not object %s with property %s",(char *)(*sub)->objectName.c_str(), (char *)(*sub)->propertyName.c_str());
+				break;
+			}
+		}
+	}
+	if(rv == 0) {
+		return rv;
+	}
+	for(vector<helics_value_publication*>::iterator pub = helics_value_publications.begin(); pub != helics_value_publications.end(); pub++) {
 		vObj = (*pub)->pObjectProperty->get_object();
 		if((vObj->flags & OF_INIT) != OF_INIT){
 			defer = true;
 		}
 	}
-	for(vector<helics_subscription*>::iterator sub = helics_subscriptions.begin(); sub != helics_subscriptions.end(); sub++) {
+	for(vector<helics_value_subscription*>::iterator sub = helics_value_subscriptions.begin(); sub != helics_value_subscriptions.end(); sub++) {
+		vObj = (*sub)->pObjectProperty->get_object();
+		if((vObj->flags & OF_INIT) != OF_INIT){
+			defer = true;
+		}
+	}
+	for(vector<helics_endpoint_publication*>::iterator pub = helics_endpoint_publications.begin(); pub != helics_endpoint_publications.end(); pub++) {
+		vObj = (*pub)->pObjectProperty->get_object();
+		if((vObj->flags & OF_INIT) != OF_INIT){
+			defer = true;
+		}
+	}
+	for(vector<helics_endpoint_subscription*>::iterator sub = helics_endpoint_subscriptions.begin(); sub != helics_endpoint_subscriptions.end(); sub++) {
 		vObj = (*sub)->pObjectProperty->get_object();
 		if((vObj->flags & OF_INIT) != OF_INIT){
 			defer = true;
@@ -252,10 +321,6 @@ int helics_msg::init(OBJECT *parent){
 		gl_verbose("helics_msg::init(): %s is defering initialization.", obj->name);
 		return 2;
 	}
-
-
-
-
 	//get a string vector of the unique function subscriptions
 /*	for(relay = first_helicsfunction; relay != NULL; relay = relay->next){
 		if(relay->drtn == DXD_READ){
@@ -288,8 +353,8 @@ int helics_msg::init(OBJECT *parent){
 	pHelicsFederate = helics_federate;
 	//register helics publications
 	string pub_sub_name = "";
-	for(vector<helics_publication*>::iterator pub = helics_publications.begin(); pub != helics_publications.end(); pub++) {
-#if 0
+	for(vector<helics_value_publication*>::iterator pub = helics_value_publications.begin(); pub != helics_value_publications.end(); pub++) {
+#if 1
 		if((*pub)->pObjectProperty->is_complex()) {
 			printf("helics_msg: Calling registerPubliscation<std::complex>\n");
 			(*pub)->pHelicsPublicationId = helics_federate->registerPublication((*pub)->topicName, "complex", "");
@@ -304,43 +369,46 @@ int helics_msg::init(OBJECT *parent){
 			(*pub)->pHelicsPublicationId = helics_federate->registerPublication((*pub)->topicName, "string", "");
 		}
 #endif
-#if 1
+#if 0
 		gl_verbose("helics_msg: Calling registerPublication");
 		(*pub)->pHelicsPublicationId = helics_federate->registerPublication((*pub)->topicName, "string", "");
 #endif
 	}
 	//register helics subscriptions
-	for(vector<helics_subscription*>::iterator sub = helics_subscriptions.begin(); sub != helics_subscriptions.end(); sub++) {
+	for(vector<helics_value_subscription*>::iterator sub = helics_value_subscriptions.begin(); sub != helics_value_subscriptions.end(); sub++) {
 		pub_sub_name.clear();
 		pub_sub_name.append((*sub)->subscription_topic);
-#if 0
+#if 1
 		if((*sub)->pObjectProperty->is_complex()) {
 			printf("helics_msg: Calling registerOptionalSubscription<std::complex>\n");
 			(*sub)->pHelicsSubscriptionId = helics_federate->registerRequiredSubscription(pub_sub_name, "complex", "");
-			std::complex<double> complex_temp = {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
-			helics_federate->setDefaultValue<std::complex<double>>((*sub)->pHelicsSubscriptionId, complex_temp);
 		} else if((*sub)->pObjectProperty->is_integer()) {
 			printf("helics_msg: Calling registerOptionalSubscription<int64>\n");
 			(*sub)->pHelicsSubscriptionId = helics_federate->registerRequiredSubscription(pub_sub_name, "int64", "");
-			long long int integer_temp;
-			(*sub)->pObjectProperty->getp(integer_temp);
-			helics_federate->setDefaultValue<long long int>((*sub)->pHelicsSubscriptionId, integer_temp);
 		} else if((*sub)->pObjectProperty->is_double()) {
 			printf("helics_msg: Calling registerOptionalSubscription<double>\n");
 			(*sub)->pHelicsSubscriptionId = helics_federate->registerRequiredSubscription(pub_sub_name, "double", "");
-			double double_temp = std::numeric_limits<double>::quiet_NaN();
-			helics_federate->setDefaultValue<double>((*sub)->pHelicsSubscriptionId, double_temp);
 		} else {
 			printf("helics_msg: Calling registerOptionalSubscription<string>\n");
 			(*sub)->pHelicsSubscriptionId = helics_federate->registerRequiredSubscription(pub_sub_name, "string", "");
-			helics_federate->setDefaultValue<string>((*sub)->pHelicsSubscriptionId, "");
 		}
 #endif
-#if 1
+#if 0
 		gl_verbose("helics_msg: Calling registerOptionalSubscription");
 		(*sub)->pHelicsSubscriptionId = helics_federate->registerRequiredSubscription(pub_sub_name, "string", "");
-        	// helics_federate->setDefaultValue<string>((*sub)->pHelicsSubscriptionId, "");
 #endif
+	}
+	// register helics output endpoints
+	for(vector<helics_endpoint_publication*>::iterator pub = helics_endpoint_publications.begin(); pub != helics_endpoint_publications.end(); pub++) {
+		gl_verbose("helics_msg: Calling registerEndpoint");
+		(*pub)->pHelicsPublicationEndpointId = helics_federate->registerEndpoint((*pub)->topicName, "string");
+	}
+	// register helics output endpoints
+	for(vector<helics_endpoint_subscription*>::iterator sub = helics_endpoint_subscriptions.begin(); sub != helics_endpoint_subscriptions.end(); sub++) {
+		pub_sub_name.clear();
+		pub_sub_name.append((*sub)->subscription_topic);
+		gl_verbose("helics_msg: Calling registerOptionalSubscription");
+		(*sub)->pHelicsSubscriptionEndpointId = helics_federate->registerEndpoint(pub_sub_name, "string");
 	}
 	//TODO Call finished initializing
 	gl_verbose("helics_msg: Calling enterInitializationState");
@@ -670,14 +738,14 @@ int helics_msg::publishVariables(){
 	int buffer_size = 0;
 	string temp_value = "";
 	std::complex<double> complex_temp = {0.0, 0.0};
-	for(vector<helics_publication*>::iterator pub = helics_publications.begin(); pub != helics_publications.end(); pub++) {
+	for(vector<helics_value_publication*>::iterator pub = helics_value_publications.begin(); pub != helics_value_publications.end(); pub++) {
 		buffer_size = 0;
 		if( (*pub)->pObjectProperty->is_complex() ) {
 			double real_part = (*pub)->pObjectProperty->get_part("real");
 			double imag_part = (*pub)->pObjectProperty->get_part("imag");
 			gld_unit *val_unit = (*pub)->pObjectProperty->get_unit();
 			complex_temp = {real_part, imag_part};
-#if 0
+#if 1
 	#if HAVE_HELICS
 			printf("helics_msg: calling publish<complex<double>>");
 			helics_federate->publish<std::complex<double>>((*pub)->pHelicsPublicationId, complex_temp);
@@ -689,7 +757,7 @@ int helics_msg::publishVariables(){
 				buffer_size = snprintf(&buffer[0], 1023, "%.3f%+.3fj", real_part, imag_part, val_unit->get_name());
 			}
 		} else {
-#if 0
+#if 1
 	#if HAVE_HELICS
 			if((*pub)->pObjectProperty->is_integer()) {
 				long long int integer_temp = 0;
@@ -715,7 +783,7 @@ int helics_msg::publishVariables(){
 #endif
 			buffer_size = (*pub)->pObjectProperty->to_string(&buffer[0], 1023);
 		}
-#if 1
+#if 0
 	#if HAVE_HELICS
         try {
 			if(helics_federate->getCurrentState() == helics::ValueFederate::op_states::execution){
@@ -734,6 +802,34 @@ int helics_msg::publishVariables(){
 		memset(&buffer[0], '\0', 1024);
 	}
 
+	for(vector<helics_endpoint_publication*>::iterator pub = helics_endpoint_publications.begin(); pub != helics_endpoint_publications.end(); pub++) {
+		buffer_size = 0;
+		if( (*pub)->pObjectProperty->is_complex() ) {
+			double real_part = (*pub)->pObjectProperty->get_part("real");
+			double imag_part = (*pub)->pObjectProperty->get_part("imag");
+			gld_unit *val_unit = (*pub)->pObjectProperty->get_unit();
+			complex_temp = {real_part, imag_part};
+			if(val_unit->is_valid()){
+				buffer_size = snprintf(&buffer[0], 1023, "%.3f%+.3fj %s", real_part, imag_part, val_unit->get_name());
+			} else {
+				buffer_size = snprintf(&buffer[0], 1023, "%.3f%+.3fj", real_part, imag_part, val_unit->get_name());
+			}
+		} else {
+			buffer_size = (*pub)->pObjectProperty->to_string(&buffer[0], 1023);
+		}
+#if HAVE_HELICS
+        try {
+			if(helics_federate->getCurrentState() == helics::ValueFederate::op_states::execution){
+				gl_verbose("calling helics sendMessage");
+				helics_federate->sendMessage((*pub)->pHelicsPublicationId, &(*pub)->destination, &buffer[0], buffer_size);
+			}
+        } catch (const std::exception& e) { // reference to the base of a polymorphic object
+        	gl_error("calling HELICS sendMessage resulted in an unknown error.");
+             std::cout << e.what() << std::endl; // information from length_error printed
+        }
+#endif
+		memset(&buffer[0], '\0', 1024);
+	}
 	return 1;
 }
 
@@ -747,8 +843,8 @@ int helics_msg::subscribeVariables(){
 	double double_temp = 0.0;
 	std::complex<double> complex_temp = {0.0, 0.0};
 #if HAVE_HELICS
-	for(vector<helics_subscription*>::iterator sub = helics_subscriptions.begin(); sub != helics_subscriptions.end(); sub++){
-#if 0
+	for(vector<helics_value_subscription*>::iterator sub = helics_value_subscriptions.begin(); sub != helics_value_subscriptions.end(); sub++){
+#if 1
 		if((*sub)->pObjectProperty->is_complex()) {
 			printf("helics_msg: Calling getValue<complex<double>>\n");
 			helics_federate->getValue<std::complex<double>>((*sub)->pHelicsSubscriptionId, complex_temp);
@@ -777,7 +873,7 @@ int helics_msg::subscribeVariables(){
 			}
 		}
 #endif
-#if 1
+#if 0
 		gl_verbose("helics_msg: Calling getValue");
 		helics_federate->getValue((*sub)->pHelicsSubscriptionId, value_buffer);
 		if(!value_buffer.empty()){
@@ -786,6 +882,16 @@ int helics_msg::subscribeVariables(){
 		}
 		value_buffer = "";
 #endif
+
+	}
+
+	for(vector<helics_endpoint_subscription*>::iterator sub = helics_endpoint_subscriptions.begin(); sub != helics_endpoint_subscriptions.end(); sub++){
+		if(helics_federate->hasMessage((*sub)->pHelicsSubscriptionEndpointId)){
+			helics::Message* mesg;
+			for(int i = 0; i < (int) helics_federate->receiveCount((*sub)->pHelicsSubscriptionEndpointId); i++) {
+				mesg = helics_federate->getMessage((*sub)->pHelicsSubscriptionEndpointId);
+			}
+		}
 
 	}
 #endif

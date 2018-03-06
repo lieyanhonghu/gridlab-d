@@ -15,7 +15,7 @@
 #ifdef min
 #undef min
 #endif
-#include <helics/application_api/ValueFederate.hpp>
+#include <helics/application_api/CombinationFederate.hpp>
 #endif
 #include<sstream>
 #include<vector>
@@ -46,9 +46,9 @@ class helics_msg;
 //extern "C" FUNCTIONSRELAY *find_helics_function(const char *rclass, const char *rname);
 //extern "C" size_t helics_from_hex(void *buf, size_t len, const char *hex, size_t hexlen);
 
-class helics_publication {
+class helics_value_publication {
 public:
-	helics_publication(){
+	helics_value_publication(){
 		pObjectProperty = NULL;
 		pHelicsPublicationId = NULL;
 	}
@@ -59,9 +59,9 @@ public:
 	helics::publication_id_t pHelicsPublicationId;
 };
 
-class helics_subscription {
+class helics_value_subscription {
 public:
-	helics_subscription(){
+	helics_value_subscription(){
 		pObjectProperty = NULL;
 		pHelicsSubscriptionId = NULL;
 	}
@@ -71,17 +71,46 @@ public:
 	gld_property *pObjectProperty;
 	helics::subscription_id_t pHelicsSubscriptionId;
 };
+
+class helics_endpoint_publication {
+public:
+	helics_endpoint_publication(){
+		pObjectProperty = NULL;
+		pHelicsPublicationId = NULL;
+	}
+	string objectName;
+	string propertyName;
+	string topicName;
+	gld_property *pObjectProperty;
+	string destination;
+	helics::endpoint_id_t pHelicsPublicationEndpointId;
+};
+
+class helics_endpoint_subscription {
+public:
+	helics_endpoint_subscription(){
+		pObjectProperty = NULL;
+		pHelicsSubscriptionId = NULL;
+	}
+	string objectName;
+	string propertyName;
+	string subscription_topic;
+	gld_property *pObjectProperty;
+	helics::endpoint_id_t pHelicsSubscriptionEndpointId;
+};
 class helics_msg : public gld_object {
 public:
 	GL_ATOMIC(double,version);
 	// TODO add published properties here
 
 private:
-	vector<helics_subscription*> helics_subscriptions;
-	vector<helics_publication*> helics_publications;
+	vector<helics_value_subscription*> helics_value_subscriptions;
+	vector<helics_value_publication*> helics_value_publications;
+	vector<helics_endpoint_subscription*> helics_endpoint_subscriptions;
+	vector<helics_endpoint_publication*> helics_endpoint_publications;
 	vector<string> *inFunctionTopics;
 	varmap *vmap[14];
-	helics::ValueFederate *helics_federate;
+	helics::CombinationFederate *helics_federate;
 	TIMESTAMP last_approved_helics_time;
 	TIMESTAMP initial_sim_time;
 	double last_delta_helics_time;
