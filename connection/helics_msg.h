@@ -76,7 +76,7 @@ class helics_endpoint_publication {
 public:
 	helics_endpoint_publication(){
 		pObjectProperty = NULL;
-		pHelicsPublicationId = NULL;
+		pHelicsPublicationEndpointId = NULL;
 	}
 	string objectName;
 	string propertyName;
@@ -90,7 +90,7 @@ class helics_endpoint_subscription {
 public:
 	helics_endpoint_subscription(){
 		pObjectProperty = NULL;
-		pHelicsSubscriptionId = NULL;
+		pHelicsSubscriptionEndpointId = NULL;
 	}
 	string objectName;
 	string propertyName;
