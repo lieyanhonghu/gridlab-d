@@ -355,16 +355,16 @@ int helics_msg::init(OBJECT *parent){
 	string pub_sub_name = "";
 	for(vector<helics_value_publication*>::iterator pub = helics_value_publications.begin(); pub != helics_value_publications.end(); pub++) {
 		if((*pub)->pObjectProperty->is_complex()) {
-			printf("helics_msg: Calling registerPubliscation<std::complex>\n");
+			gl_verbose("helics_msg: Calling registerPubliscation<std::complex>\n");
 			(*pub)->pHelicsPublicationId = helics_federate->registerPublication((*pub)->topicName, "complex", "");
 		} else if((*pub)->pObjectProperty->is_integer()) {
-			printf("helics_msg: Calling registerPubliscation<int64>\n");
+			gl_verbose("helics_msg: Calling registerPubliscation<int64>\n");
 			(*pub)->pHelicsPublicationId = helics_federate->registerPublication((*pub)->topicName, "int", "");
 		} else if((*pub)->pObjectProperty->is_double()) {
-			printf("helics_msg: Calling registerPubliscation<double>\n");
+			gl_verbose("helics_msg: Calling registerPubliscation<double>\n");
 			(*pub)->pHelicsPublicationId = helics_federate->registerPublication((*pub)->topicName, "double", "");
 		} else {
-			printf("helics_msg: Calling registerPubliscation<string>\n");
+			gl_verbose("helics_msg: Calling registerPubliscation<string>\n");
 			(*pub)->pHelicsPublicationId = helics_federate->registerPublication((*pub)->topicName, "string", "");
 		}
 	}
@@ -373,16 +373,16 @@ int helics_msg::init(OBJECT *parent){
 		pub_sub_name.clear();
 		pub_sub_name.append((*sub)->subscription_topic);
 		if((*sub)->pObjectProperty->is_complex()) {
-			printf("helics_msg: Calling registerOptionalSubscription<std::complex>\n");
+			gl_verbose("helics_msg: Calling registerOptionalSubscription<std::complex>\n");
 			(*sub)->pHelicsSubscriptionId = helics_federate->registerRequiredSubscription(pub_sub_name, "complex", "");
 		} else if((*sub)->pObjectProperty->is_integer()) {
-			printf("helics_msg: Calling registerOptionalSubscription<int64>\n");
+			gl_verbose("helics_msg: Calling registerOptionalSubscription<int64>\n");
 			(*sub)->pHelicsSubscriptionId = helics_federate->registerRequiredSubscription(pub_sub_name, "int64", "");
 		} else if((*sub)->pObjectProperty->is_double()) {
-			printf("helics_msg: Calling registerOptionalSubscription<double>\n");
+			gl_verbose("helics_msg: Calling registerOptionalSubscription<double>\n");
 			(*sub)->pHelicsSubscriptionId = helics_federate->registerRequiredSubscription(pub_sub_name, "double", "");
 		} else {
-			printf("helics_msg: Calling registerOptionalSubscription<string>\n");
+			gl_verbose("helics_msg: Calling registerOptionalSubscription<string>\n");
 			(*sub)->pHelicsSubscriptionId = helics_federate->registerRequiredSubscription(pub_sub_name, "string", "");
 		}
 	}
@@ -436,15 +436,6 @@ TIMESTAMP helics_msg::postsync(TIMESTAMP t1){
 }
 
 TIMESTAMP helics_msg::commit(TIMESTAMP t0, TIMESTAMP t1){
-
-	int result = 0;
-	result = publishVariables();
-	if(result == 0){
-		return TS_INVALID;
-	}
-	if(result == 0){
-		return TS_INVALID;
-	}
 	return TS_NEVER;
 }
 
@@ -736,18 +727,18 @@ int helics_msg::publishVariables(){
 			gld_unit *val_unit = (*pub)->pObjectProperty->get_unit();
 			complex_temp = {real_part, imag_part};
 
-			printf("helics_msg: calling publish<complex<double>>");
+			gl_verbose("helics_msg: calling publish<complex<double>>");
 			helics_federate->publish<std::complex<double>>((*pub)->pHelicsPublicationId, complex_temp);
 
 		} else if((*pub)->pObjectProperty->is_integer()) {
 			int64_t integer_temp = 0;
 			(*pub)->pObjectProperty->getp(integer_temp);
-			printf("helics_msg: calling publish<int>");
+			gl_verbose("helics_msg: calling publish<int>");
 			helics_federate->publish<int64_t>((*pub)->pHelicsPublicationId, integer_temp);
 		} else if((*pub)->pObjectProperty->is_double()) {
 			double double_temp = 0;
 			(*pub)->pObjectProperty->getp(double_temp);
-			printf("helics_msg: calling publish<complex<double>>");
+			gl_verbose("helics_msg: calling publish<complex<double>>");
 			helics_federate->publish<double>((*pub)->pHelicsPublicationId, double_temp);
 		} else {
 			buffer_size = (*pub)->pObjectProperty->to_string(&buffer[0], 1023);
@@ -755,7 +746,7 @@ int helics_msg::publishVariables(){
 				temp_value = "";
 			} else {
 				temp_value = string(buffer, (size_t)(buffer_size));
-				printf("helics_msg: Calling publish\n");
+				gl_verbose("helics_msg: Calling publish\n");
 				helics_federate->publish<std::string>((*pub)->pHelicsPublicationId, temp_value);
 			}
 		}
@@ -806,7 +797,7 @@ int helics_msg::subscribeVariables(){
 	for(vector<helics_value_subscription*>::iterator sub = helics_value_subscriptions.begin(); sub != helics_value_subscriptions.end(); sub++){
 		try {
 			if((*sub)->pObjectProperty->is_complex()) {
-				printf("helics_msg: Calling getValue<complex<double>>\n");
+				gl_verbose("helics_msg: Calling getValue<complex<double>>\n");
 				helics_federate->getValue<std::complex<double>>((*sub)->pHelicsSubscriptionId, complex_temp);
 				if(!std::isnan(complex_temp.real()) && !std::isnan(complex_temp.imag())) {
 					gld_complex_temp.SetReal(complex_temp.real());
@@ -814,17 +805,17 @@ int helics_msg::subscribeVariables(){
 					(*sub)->pObjectProperty->setp(gld_complex_temp);
 				}
 			} else if((*sub)->pObjectProperty->is_integer()) {
-				printf("helics_msg: Calling getValue<long long int>\n");
+				gl_verbose("helics_msg: Calling getValue<long long int>\n");
 				helics_federate->getValue<int64_t>((*sub)->pHelicsSubscriptionId, integer_temp);
 				(*sub)->pObjectProperty->setp(integer_temp);
 			} else if((*sub)->pObjectProperty->is_double()) {
-				printf("helics_msg: Calling getValue<double>\n");
+				gl_verbose("helics_msg: Calling getValue<double>\n");
 				helics_federate->getValue<double>((*sub)->pHelicsSubscriptionId, double_temp);
 				if(!std::isnan(double_temp)) {
 					(*sub)->pObjectProperty->setp(double_temp);
 				}
 			} else {
-				printf("helics_msg: Calling getValue<string>\n");
+				gl_verbose("helics_msg: Calling getValue<string>\n");
 				helics_federate->getValue<string>((*sub)->pHelicsSubscriptionId, value_buffer);
 				if(!value_buffer.empty()) {
 					strncpy(valueBuf, value_buffer.c_str(), 1023);
@@ -850,7 +841,7 @@ int helics_msg::subscribeVariables(){
 		if(helics_federate->hasMessage((*sub)->pHelicsSubscriptionEndpointId)){
 			helics::Message* mesg;
 			for(int i = 0; i < (int) helics_federate->receiveCount((*sub)->pHelicsSubscriptionEndpointId); i++) {
-				printf("calling getMessage()");
+				gl_verbose("calling getMessage()");
 				mesg = helics_federate->getMessage((*sub)->pHelicsSubscriptionEndpointId).get();
 			}
 			const string message_buffer = mesg->to_string();
