@@ -131,7 +131,7 @@ GLD_SOURCES_EXTRA_PLACE_HOLDER += gldcore/xcore.h
 
 if HAVE_MINGW
 
-bin_SCRIPTS += gldcore/gridlabd
+bin_SCRIPTS += gldcore/gridlabd.sh
 
 bin_PROGRAMS += gridlabd
 
@@ -156,7 +156,7 @@ EXTRA_gridlabd_SOURCES += $(GLD_SOURCES_EXTRA_PLACE_HOLDER)
 
 else
 
-bin_SCRIPTS += gldcore/gridlabd
+bin_SCRIPTS += gldcore/gridlabd.sh
 
 bin_PROGRAMS += gridlabd.bin
 

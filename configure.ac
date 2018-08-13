@@ -495,9 +495,9 @@ gld_save_LDFLAGS="$LDFLAGS"; LDFLAGS="$LDFLAGS $HELICS_LDFLAGS"
 gld_save_CPPFLAGS="$CPPFLAGS"; CPPFLAGS="$CPPFLAGS $HELICS_CPPFLAGS"
 # add libhelics to HELICS_LIBS if missing
 AS_CASE([$HELICS_LIBS],
-        [*lhelics*], [], [HELICS_LIBS="$HELICS_LIBS -lhelics-shared -lzmq -lboost_chrono -lboost_date_time -lboost_filesystem -lboost_program_options -lboost_system -lboost_timer -lboost_unit_test_framework -lrt"])
+        [*lhelics*], [], [HELICS_LIBS="$HELICS_LIBS -lhelics-shared -lzmq -lboost_chrono -lboost_date_time -lboost_filesystem -lboost_program_options -lboost_system -lboost_timer -lboost_unit_test_framework"])
 AS_CASE([$LIBS],
-        [*lhelics*], [], [LIBS="$LIBS -lhelics-shared -lzmq -lboost_chrono -lboost_date_time -lboost_filesystem -lboost_program_options -lboost_system -lboost_timer -lboost_unit_test_framework -lrt"])
+        [*lhelics*], [], [LIBS="$LIBS -lhelics-shared -lzmq -lboost_chrono -lboost_date_time -lboost_filesystem -lboost_program_options -lboost_system -lboost_timer -lboost_unit_test_framework"])
 # add libzmq to HELICS_LIBS if missing
 #AS_CASE([$HELICS_LIBS],
 #        [*lzmq*], [], [HELICS_LIBS="$HELICS_LIBS -lzmq"])
@@ -653,7 +653,7 @@ AC_SUBST([MYSQL_LIBS])
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([gridlabd.spec])
-AC_CONFIG_FILES([gldcore/gridlabd], [chmod +x gldcore/gridlabd])
+AC_CONFIG_FILES([gldcore/gridlabd.sh], [chmod +x gldcore/gridlabd.sh])
 AC_OUTPUT
 
 BINDIR=`eval echo $(eval echo $bindir)`

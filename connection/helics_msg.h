@@ -12,8 +12,11 @@
 #include "varmap.h"
 #include "connection.h"
 #if HAVE_HELICS
-#ifdef min
-#undef min
+//#ifdef min
+//#undef min
+//#endif
+#ifdef OPTIONAL
+#undef OPTIONAL
 #endif
 #include <helics/application_api/CombinationFederate.hpp>
 #endif
@@ -46,6 +49,7 @@ class helics_msg;
 //extern "C" FUNCTIONSRELAY *find_helics_function(const char *rclass, const char *rname);
 //extern "C" size_t helics_from_hex(void *buf, size_t len, const char *hex, size_t hexlen);
 
+#if HAVE_HELICS
 class helics_value_publication {
 public:
 	helics_value_publication(){
@@ -98,19 +102,24 @@ public:
 	gld_property *pObjectProperty;
 	helics::endpoint_id_t pHelicsSubscriptionEndpointId;
 };
+#endif
 class helics_msg : public gld_object {
 public:
 	GL_ATOMIC(double,version);
 	// TODO add published properties here
 
 private:
+#if HAVE_HELICS
 	vector<helics_value_subscription*> helics_value_subscriptions;
 	vector<helics_value_publication*> helics_value_publications;
 	vector<helics_endpoint_subscription*> helics_endpoint_subscriptions;
 	vector<helics_endpoint_publication*> helics_endpoint_publications;
+#endif
 	vector<string> *inFunctionTopics;
 	varmap *vmap[14];
+#if HAVE_HELICS
 	helics::CombinationFederate *helics_federate;
+#endif
 	TIMESTAMP last_approved_helics_time;
 	TIMESTAMP initial_sim_time;
 	double last_delta_helics_time;
